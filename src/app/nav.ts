@@ -15,10 +15,11 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', status: 'live' },
-  { to: '/materials', label: 'Materials', status: 'planned' },
-  { to: '/receipts', label: 'Receipts', status: 'planned' },
-  { to: '/consumption', label: 'Consumption & Waste', status: 'planned' },
-  { to: '/adjustments', label: 'Adjustments', status: 'planned' },
-  { to: '/stocktaking', label: 'Stocktaking', status: 'planned' },
+  { to: '/materials', label: 'Materials', status: 'live' },
+  { to: '/inventory', label: 'Inventory', status: 'live' },
+  { to: '/receipts', label: 'Receipts', status: 'live' },
+  { to: '/consumption', label: 'Consumption & Waste', status: 'live' },
+  { to: '/adjustments', label: 'Adjustments', status: 'live' },
+  { to: '/stocktaking', label: 'Stocktaking', status: 'live' },
   { to: '/reports', label: 'Reports', status: 'planned' },
 ]
