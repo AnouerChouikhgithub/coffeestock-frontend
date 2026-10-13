@@ -1,55 +1,24 @@
-import { useEffect, useState } from 'react'
-import { getHealthStatus, type HealthStatus } from '../services/health'
+import { Route, Routes } from 'react-router-dom'
+import { AppShell } from './AppShell'
+import { DashboardPage } from './DashboardPage'
+import { PlannedPage } from './PlannedPage'
 
-function App() {
-  const [health, setHealth] = useState<HealthStatus | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const loadHealth = async () => {
-      try {
-        const response = await getHealthStatus()
-        setHealth(response)
-        setError(null)
-      } catch (err) {
-        setHealth(null)
-        setError(err instanceof Error ? err.message : 'Backend connection failed.')
-      }
-    }
-
-    void loadHealth()
-  }, [])
-
+/** Route table. Only Dashboard is live in Phase 6; the operational sections
+ * resolve to placeholders until Phase 7 wires them to the backend. */
+export function App() {
   return (
-    <main>
-      <div className="app-shell">
-        <p className="eyebrow">Internal operations</p>
-        <h1>CoffeeStock</h1>
-        <p className="subtitle">Smart Inventory. Better Decisions.</p>
-
-        <div className="status-panel" aria-live="polite">
-          {health ? (
-            <>
-              <strong className="status-ok">Backend connected</strong>
-              <span>
-                {health.status} · {health.app} · {health.environment}
-              </span>
-            </>
-          ) : (
-            <>
-              <strong className={error ? 'status-error' : 'status-ok'}>
-                {error ? 'Backend unavailable' : 'Checking backend health...'}
-              </strong>
-              <span>{error ?? 'Waiting for the Symfony API to respond.'}</span>
-            </>
-          )}
-        </div>
-
-        <p className="meta">
-          Frontend: {import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'}
-        </p>
-      </div>
-    </main>
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="materials" element={<PlannedPage title="Materials" />} />
+        <Route path="receipts" element={<PlannedPage title="Receipts" />} />
+        <Route path="consumption" element={<PlannedPage title="Consumption & Waste" />} />
+        <Route path="adjustments" element={<PlannedPage title="Adjustments" />} />
+        <Route path="stocktaking" element={<PlannedPage title="Stocktaking" />} />
+        <Route path="reports" element={<PlannedPage title="Reports" />} />
+        <Route path="*" element={<PlannedPage title="Page not found" />} />
+      </Route>
+    </Routes>
   )
 }
 

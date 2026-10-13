@@ -1,0 +1,49 @@
+/* Design tokens for the CoffeeStock internal inventory app.
+ *
+ * Phase 6 delivers the design system foundation only: a single dark theme,
+ * a small color/space/radius scale, and focus/aria helpers. Future inventory
+ * pages (Phase 7) compose these tokens rather than hard-coding values.
+ */
+
+:root {
+  /* Surfaces */
+  --cs-bg: #15120f;
+  --cs-bg-grad-top: #130f0d;
+  --cs-bg-grad-bottom: #201711;
+  --cs-surface: rgba(32, 24, 20, 0.86);
+  --cs-surface-raised: rgba(38, 29, 23, 0.92);
+  --cs-surface-sunken: rgba(19, 15, 13, 0.72);
+
+  /* Borders */
+  --cs-border: rgba(207, 177, 143, 0.28);
+  --cs-border-strong: rgba(196, 162, 114, 0.42);
+
+  /* Text */
+  --cs-text: #f7f4ee;
+  --cs-text-muted: rgba(243, 234, 222, 0.7);
+  --cs-text-dim: rgba(243, 234, 222, 0.55);
+
+  /* Accents */
+  --cs-accent: #d4a86c;
+  --cs-accent-strong: #a67a4a;
+  --cs-ok: #99f5b0;
+  --cs-error: #ffb4b4;
+  --cs-warn: #ffd39b;
+
+  /* Spacing scale */
+  --cs-space-1: 0.25rem;
+  --cs-space-2: 0.5rem;
+  --cs-space-3: 0.75rem;
+  --cs-space-4: 1rem;
+  --cs-space-5: 1.5rem;
+  --cs-space-6: 2rem;
+  --cs-space-7: 2.5rem;
+
+  /* Radii */
+  --cs-radius-sm: 0.5rem;
+  --cs-radius-md: 0.9rem;
+  --cs-radius-lg: 1.5rem;
+
+  /* Layout */
+  --cs-sidebar-width: 15rem;
+}
