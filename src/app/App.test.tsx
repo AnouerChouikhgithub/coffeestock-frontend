@@ -19,6 +19,11 @@ vi.mock('../services/health', () => ({
   getHealthStatus: vi.fn(),
 }))
 
+vi.mock('../services/materials', () => ({
+  listMaterials: vi.fn(),
+  createMaterial: vi.fn(),
+}))
+
 async function renderAt(path: string) {
   const { getHealthStatus } = await import('../services/health')
   vi.mocked(getHealthStatus).mockResolvedValue(healthyResponse)
@@ -62,10 +67,23 @@ describe('App shell', () => {
     })
   })
 
-  it('renders a placeholder for a planned section', async () => {
-    await renderAt('/materials')
+  it('renders a live workflow page (Materials)', async () => {
+    const { listMaterials } = await import('../services/materials')
+    vi.mocked(listMaterials).mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] })
+
+    render(
+      <MemoryRouter initialEntries={['/materials']}>
+        <App />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByRole('heading', { name: 'Materials', level: 1 })).toBeInTheDocument()
+  })
+
+  it('renders a placeholder for a planned section (Reports)', async () => {
+    await renderAt('/reports')
+
+    expect(screen.getByRole('heading', { name: 'Reports', level: 1 })).toBeInTheDocument()
     expect(screen.getByText(/will be built in a later phase/i)).toBeInTheDocument()
   })
 

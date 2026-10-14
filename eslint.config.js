@@ -39,6 +39,9 @@ export default [
       ...tsPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // TypeScript already flags undefined identifiers at compile time; the base
+      // no-undef rule misfires on DOM/lib globals used only in type position.
+      'no-undef': 'off',
     },
   },
 ]
