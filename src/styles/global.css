@@ -389,3 +389,135 @@ h1 {
     padding: var(--cs-space-3) var(--cs-space-4);
   }
 }
+
+/* ---------- Phase 7 workflow primitives ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--cs-space-3);
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: var(--cs-space-2) var(--cs-space-3);
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.data-table thead th {
+  color: var(--cs-text-dim);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field {
+  margin-bottom: var(--cs-space-4);
+}
+
+.field label {
+  display: block;
+  margin-bottom: var(--cs-space-1);
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: var(--cs-space-2) var(--cs-space-3);
+  border-radius: var(--cs-radius-sm);
+  border: 1px solid var(--cs-border-strong);
+  background: var(--cs-surface-sunken);
+  color: var(--cs-text);
+}
+
+.field-hint {
+  margin: var(--cs-space-1) 0;
+  color: var(--cs-text-dim);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: var(--cs-space-1) 0 0;
+  color: var(--cs-error);
+  font-size: 0.88rem;
+}
+
+.field-invalid input,
+.field-invalid select,
+.field-invalid textarea {
+  border-color: var(--cs-error);
+}
+
+.items-fieldset {
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-sm);
+  padding: var(--cs-space-4);
+  margin-bottom: var(--cs-space-4);
+}
+
+.items-fieldset legend {
+  padding: 0 var(--cs-space-2);
+  color: var(--cs-text-dim);
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--cs-space-3);
+  align-items: end;
+  margin-bottom: var(--cs-space-3);
+}
+
+@media (max-width: 48rem) {
+  .item-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.button-small {
+  padding: var(--cs-space-1) var(--cs-space-3);
+  font-size: 0.88rem;
+}
+
+.button-accent {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.button-selected {
+  border-color: var(--cs-accent);
+  background: var(--cs-accent);
+  color: var(--cs-bg);
+}
+
+.button-row {
+  display: flex;
+  gap: var(--cs-space-3);
+  flex-wrap: wrap;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: var(--cs-space-2);
+  margin-bottom: var(--cs-space-4);
+}
+
+.qty-below {
+  color: var(--cs-warn);
+  font-weight: 600;
+}
