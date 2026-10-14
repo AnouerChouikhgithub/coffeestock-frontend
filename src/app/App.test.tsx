@@ -24,6 +24,13 @@ vi.mock('../services/materials', () => ({
   createMaterial: vi.fn(),
 }))
 
+vi.mock('../services/reports', () => ({
+  getInventoryReport: vi.fn().mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] }),
+  getMovementsReport: vi.fn(),
+  inventoryCsvUrl: vi.fn(() => '/reports/inventory/export.csv'),
+  movementsCsvUrl: vi.fn(() => '/reports/movements/export.csv'),
+}))
+
 async function renderAt(path: string) {
   const { getHealthStatus } = await import('../services/health')
   vi.mocked(getHealthStatus).mockResolvedValue(healthyResponse)
@@ -80,11 +87,17 @@ describe('App shell', () => {
     expect(screen.getByRole('heading', { name: 'Materials', level: 1 })).toBeInTheDocument()
   })
 
-  it('renders a placeholder for a planned section (Reports)', async () => {
+  it('renders the live reporting page (Phase 8)', async () => {
     await renderAt('/reports')
 
     expect(screen.getByRole('heading', { name: 'Reports', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText(/will be built in a later phase/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Current inventory report', level: 2 }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Movement report', level: 2 }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /export csv/i }).length).toBe(2)
   })
 
   it('shows an explicit error state when the backend is unavailable', async () => {

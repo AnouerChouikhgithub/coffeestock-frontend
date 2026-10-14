@@ -21,5 +21,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/consumption', label: 'Consumption & Waste', status: 'live' },
   { to: '/adjustments', label: 'Adjustments', status: 'live' },
   { to: '/stocktaking', label: 'Stocktaking', status: 'live' },
-  { to: '/reports', label: 'Reports', status: 'planned' },
+  { to: '/reports', label: 'Reports', status: 'live' },
 ]

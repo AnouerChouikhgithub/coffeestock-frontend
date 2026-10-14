@@ -8,9 +8,10 @@ import { ReceiptsPage } from '../pages/ReceiptsPage'
 import { ConsumptionPage } from '../pages/ConsumptionPage'
 import { AdjustmentsPage } from '../pages/AdjustmentsPage'
 import { StocktakingPage } from '../pages/StocktakingPage'
+import { ReportsPage } from '../pages/ReportsPage'
 
-/** Route table. Dashboard plus the Phase 7 operational workflows; Reports ships
- * in Phase 8 and remains a placeholder. */
+/** Route table. Dashboard plus the Phase 7 operational workflows and the
+ * Phase 8 reporting view. */
 export function App() {
   return (
     <Routes>
@@ -22,7 +23,7 @@ export function App() {
         <Route path="consumption" element={<ConsumptionPage />} />
         <Route path="adjustments" element={<AdjustmentsPage />} />
         <Route path="stocktaking" element={<StocktakingPage />} />
-        <Route path="reports" element={<PlannedPage title="Reports" />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="*" element={<PlannedPage title="Page not found" />} />
       </Route>
     </Routes>
