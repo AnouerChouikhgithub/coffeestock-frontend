@@ -5,10 +5,10 @@ import { SelectField, TextField } from '../components/FormField'
 import { LoadingState } from '../components/LoadingState'
 import { MaterialSelect } from '../components/MaterialSelect'
 import {
+  exportInventoryCsv,
+  exportMovementsCsv,
   getInventoryReport,
   getMovementsReport,
-  inventoryCsvUrl,
-  movementsCsvUrl,
   type MovementReportRow,
 } from '../services/reports'
 import { errorMessage, type InventoryItem, type MovementType } from '../services/types'
@@ -57,6 +57,25 @@ export function ReportsPage() {
   const [movementType, setMovementType] = useState<'' | MovementType>('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [exporting, setExporting] = useState<'inventory' | 'movements' | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  // CSV exports are authenticated requests now (a plain link cannot carry the
+  // bearer token), so they need their own pending and failure states.
+  const runExport = useCallback(
+    async (which: 'inventory' | 'movements', job: () => Promise<void>) => {
+      setExporting(which)
+      setExportError(null)
+      try {
+        await job()
+      } catch (err) {
+        setExportError(errorMessage(err, 'The CSV export failed.'))
+      } finally {
+        setExporting(null)
+      }
+    },
+    [],
+  )
 
   const loadInventory = useCallback(async (type: string) => {
     setInventory({ kind: 'loading' })
@@ -118,6 +137,12 @@ export function ReportsPage() {
         Operational reports derived from the movement ledger, with CSV export.
       </p>
 
+      {exportError ? (
+        <Alert variant="error" title="CSV export failed">
+          <p>{exportError}</p>
+        </Alert>
+      ) : null}
+
       <section aria-labelledby="inventory-report-heading" className="panel">
         <h2 id="inventory-report-heading">Current inventory report</h2>
         <div className="filter-row">
@@ -135,13 +160,20 @@ export function ReportsPage() {
               </option>
             ))}
           </SelectField>
-          <a
+          <button
+            type="button"
             className="button"
-            href={inventoryCsvUrl(inventoryType === '' ? '' : (inventoryType as 'RAW' | 'CONSUMABLE'))}
-            download
+            disabled={exporting !== null}
+            onClick={() =>
+              void runExport('inventory', () =>
+                exportInventoryCsv(
+                  inventoryType === '' ? '' : (inventoryType as 'RAW' | 'CONSUMABLE'),
+                ),
+              )
+            }
           >
-            Export CSV
-          </a>
+            {exporting === 'inventory' ? 'Exporting…' : 'Export CSV'}
+          </button>
         </div>
 
         {inventory.kind === 'idle' || inventory.kind === 'loading' ? (
@@ -220,18 +252,23 @@ export function ReportsPage() {
             >
               Reset
             </button>
-            <a
+            <button
+              type="button"
               className="button"
-              href={movementsCsvUrl({
-                material_id: materialId === '' ? undefined : materialId,
-                movement_type: movementType === '' ? undefined : movementType,
-                date_from: dateFrom === '' ? undefined : dateFrom,
-                date_to: dateTo === '' ? undefined : dateTo,
-              })}
-              download
+              disabled={exporting !== null}
+              onClick={() =>
+                void runExport('movements', () =>
+                  exportMovementsCsv({
+                    material_id: materialId === '' ? undefined : materialId,
+                    movement_type: movementType === '' ? undefined : movementType,
+                    date_from: dateFrom === '' ? undefined : dateFrom,
+                    date_to: dateTo === '' ? undefined : dateTo,
+                  }),
+                )
+              }
             >
-              Export CSV
-            </a>
+              {exporting === 'movements' ? 'Exporting…' : 'Export CSV'}
+            </button>
           </div>
         </form>
 
