@@ -8,5 +8,7 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.ts',
     css: true,
+    // e2e/*.spec.ts are Playwright tests; Vitest must not collect them.
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**', 'test-results/**'],
   },
 })
