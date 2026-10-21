@@ -132,15 +132,31 @@ export interface Stocktake {
   counts: StocktakeCount[]
 }
 
+/** The contract error envelope carried by a failure, wherever it came from.
+ *
+ * `ApiError` (the API client) exposes it as `.body`; anything else is expected to
+ * look like an axios error with `.response.data`. Both are accepted so existing
+ * callers and tests keep working, but `.body` is the one the real client sets —
+ * reading only `.response.data` silently hid every server error code and field
+ * issue from the whole UI.
+ */
+function errorBodyOf(err: unknown): ApiErrorBody | null {
+  const direct = (err as { body?: ApiErrorBody | null })?.body
+  if (direct && typeof direct === 'object' && 'error' in direct) {
+    return direct
+  }
+  const nested = (err as { response?: { data?: ApiErrorBody } })?.response?.data
+  return nested && typeof nested === 'object' && 'error' in nested ? nested : null
+}
+
 /** Best-effort extraction of the backend's error code for user-facing messages. */
 export function errorCode(err: unknown): string | null {
-  const body = (err as { response?: { data?: ApiErrorBody } })?.response?.data
-  return body?.error?.code ?? null
+  return errorBodyOf(err)?.error?.code ?? null
 }
 
 /** Best-effort extraction of per-field issues for form validation display. */
 export function fieldErrors(err: unknown): Record<string, string> {
-  const details = (err as { response?: { data?: ApiErrorBody } })?.response?.data?.error?.details
+  const details = errorBodyOf(err)?.error?.details
   if (!details) {
     return {}
   }
@@ -153,7 +169,7 @@ export function fieldErrors(err: unknown): Record<string, string> {
 
 /** Top-level message for non-field errors. */
 export function errorMessage(err: unknown, fallback: string): string {
-  const body = (err as { response?: { data?: ApiErrorBody } })?.response?.data
+  const body = errorBodyOf(err)
   if (body?.error?.message) {
     const firstDetail = body.error.details?.[0]?.issue
     return firstDetail ? `${body.error.message} ${firstDetail}` : body.error.message

@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { AuthProvider } from '../auth/AuthProvider'
+import { clearSeededSession, seedSession } from '../test/auth'
 
 const healthyResponse = {
   status: 'ok',
@@ -27,19 +29,34 @@ vi.mock('../services/materials', () => ({
 vi.mock('../services/reports', () => ({
   getInventoryReport: vi.fn().mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] }),
   getMovementsReport: vi.fn(),
-  inventoryCsvUrl: vi.fn(() => '/reports/inventory/export.csv'),
-  movementsCsvUrl: vi.fn(() => '/reports/movements/export.csv'),
+  exportInventoryCsv: vi.fn(),
+  exportMovementsCsv: vi.fn(),
 }))
+
+vi.mock('../services/auditLogs', () => ({
+  listAuditLogs: vi.fn().mockResolvedValue({ page: 1, perPage: 25, total: 0, items: [] }),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  clearSeededSession()
+  seedSession('MANAGER')
+})
+
+function renderApp(path: string) {
+  render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </AuthProvider>,
+  )
+}
 
 async function renderAt(path: string) {
   const { getHealthStatus } = await import('../services/health')
   vi.mocked(getHealthStatus).mockResolvedValue(healthyResponse)
-
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  )
+  renderApp(path)
 }
 
 describe('App shell', () => {
@@ -74,15 +91,19 @@ describe('App shell', () => {
     })
   })
 
+  it('shows the signed-in identity and role', async () => {
+    await renderAt('/')
+
+    expect(screen.getByText('manager-user')).toBeInTheDocument()
+    expect(screen.getByText('MANAGER')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+  })
+
   it('renders a live workflow page (Materials)', async () => {
     const { listMaterials } = await import('../services/materials')
     vi.mocked(listMaterials).mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] })
 
-    render(
-      <MemoryRouter initialEntries={['/materials']}>
-        <App />
-      </MemoryRouter>,
-    )
+    renderApp('/materials')
 
     expect(screen.getByRole('heading', { name: 'Materials', level: 1 })).toBeInTheDocument()
   })
@@ -97,18 +118,25 @@ describe('App shell', () => {
     expect(
       screen.getByRole('heading', { name: 'Movement report', level: 2 }),
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /export csv/i }).length).toBe(2)
+    // CSV export is an authenticated request now, so it is a button, not a link.
+    expect(screen.getAllByRole('button', { name: /export csv/i }).length).toBe(2)
+    expect(screen.queryAllByRole('link', { name: /export csv/i })).toHaveLength(0)
+  })
+
+  it('redirects to the login screen when the tab has no session', () => {
+    clearSeededSession()
+
+    renderApp('/reports')
+
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: /primary/i })).not.toBeInTheDocument()
   })
 
   it('shows an explicit error state when the backend is unavailable', async () => {
     const { getHealthStatus } = await import('../services/health')
     vi.mocked(getHealthStatus).mockRejectedValue(new Error('Network Error'))
 
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    )
+    renderApp('/')
 
     expect(await screen.findByText(/Backend unavailable/i)).toBeInTheDocument()
     expect(screen.getByText(/Network Error/i)).toBeInTheDocument()
@@ -121,11 +149,7 @@ describe('App shell', () => {
       .mockRejectedValueOnce(new Error('Network Error'))
       .mockResolvedValueOnce(healthyResponse)
 
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    )
+    renderApp('/')
 
     expect(await screen.findByText(/Backend unavailable/i)).toBeInTheDocument()
 
@@ -134,5 +158,30 @@ describe('App shell', () => {
     await waitFor(() => {
       expect(screen.getByText(/Backend connected/i)).toBeInTheDocument()
     })
+  })
+})
+
+describe('Role-aware navigation', () => {
+  it('hides manager-only and admin-only sections from an operator', async () => {
+    clearSeededSession()
+    seedSession('OPERATOR')
+
+    await renderAt('/')
+
+    expect(screen.queryByRole('link', { name: /adjustments/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /audit log/i })).not.toBeInTheDocument()
+    // Pages every role may read stay visible.
+    expect(screen.getByRole('link', { name: /materials/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /reports/i })).toBeInTheDocument()
+  })
+
+  it('shows the audit log to an admin only', async () => {
+    clearSeededSession()
+    seedSession('ADMIN')
+
+    await renderAt('/')
+
+    expect(screen.getByRole('link', { name: /audit log/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /adjustments/i })).toBeInTheDocument()
   })
 })

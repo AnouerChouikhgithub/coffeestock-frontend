@@ -1,4 +1,5 @@
 import { apiClient } from './api'
+import { downloadCsv } from './download'
 import type { InventoryItem, MaterialType, MovementType, Paginated } from './types'
 
 export interface MovementReportRow {
@@ -35,29 +36,29 @@ export async function getMovementsReport(
   return data
 }
 
-function csvDownloadUrl(path: string, params: Record<string, string | undefined>): string {
-  const base = apiClient.defaults.baseURL ?? ''
-  const search = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== '') {
-      search.set(key, value)
-    }
-  }
-  const qs = search.toString()
-  return base + path + (qs ? `?${qs}` : '')
+/** GET /api/reports/inventory/export.csv, authenticated (contract 27).
+ *
+ * These endpoints require the bearer token, so they cannot be a plain link: the
+ * request goes through the shared client and the response is saved as a file.
+ */
+export async function exportInventoryCsv(type: MaterialType | ''): Promise<void> {
+  await downloadCsv(
+    '/reports/inventory/export.csv',
+    { type: type === '' ? undefined : type },
+    'inventory-report.csv',
+  )
 }
 
-/** Browser-followed download URL for the inventory CSV export (same filters). */
-export function inventoryCsvUrl(type: MaterialType | ''): string {
-  return csvDownloadUrl('/reports/inventory/export.csv', { type: type || undefined })
-}
-
-/** Browser-followed download URL for the movements CSV export (same filters). */
-export function movementsCsvUrl(params: MovementReportParams): string {
-  return csvDownloadUrl('/reports/movements/export.csv', {
-    material_id: params.material_id !== undefined ? String(params.material_id) : undefined,
-    movement_type: params.movement_type,
-    date_from: params.date_from,
-    date_to: params.date_to,
-  })
+/** GET /api/reports/movements/export.csv, authenticated (contract 28). */
+export async function exportMovementsCsv(params: MovementReportParams): Promise<void> {
+  await downloadCsv(
+    '/reports/movements/export.csv',
+    {
+      material_id: params.material_id,
+      movement_type: params.movement_type,
+      date_from: params.date_from,
+      date_to: params.date_to,
+    },
+    'movement-report.csv',
+  )
 }

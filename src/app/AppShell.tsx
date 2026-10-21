@@ -1,12 +1,30 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { NAV_ITEMS } from './nav'
+import { useAuth } from '../auth/useAuth'
+import { NAV_ITEMS, visibleNavItems } from './nav'
 
 /** Application shell: fixed left sidebar + main region.
  *
  * Landmarks (banner/navigation/main) and the skip link are here so every page
- * inherits them. Individual pages own their own headings and states.
+ * inherits them. The header carries the signed-in identity and the sign-out
+ * action; the nav is filtered by role. Individual pages own their headings.
  */
 export function AppShell() {
+  const { session, logout } = useAuth()
+  const [signingOut, setSigningOut] = useState(false)
+
+  const items = session ? visibleNavItems(session.user.role) : NAV_ITEMS
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    try {
+      // Clearing the session makes RequireAuth redirect this tab to /login.
+      await logout()
+    } finally {
+      setSigningOut(false)
+    }
+  }
+
   return (
     <div className="shell">
       <a className="skip-link" href="#main-content">
@@ -16,11 +34,25 @@ export function AppShell() {
       <header className="shell-header">
         <span className="shell-brand">CoffeeStock</span>
         <span className="shell-tagline">Smart Inventory. Better Decisions.</span>
+        {session ? (
+          <div className="shell-user">
+            <span className="shell-user-name">{session.user.username}</span>
+            <span className="role-badge">{session.user.role}</span>
+            <button
+              type="button"
+              className="button button-secondary button-small"
+              onClick={() => void handleSignOut()}
+              disabled={signingOut}
+            >
+              {signingOut ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
+        ) : null}
       </header>
 
       <nav className="shell-nav" aria-label="Primary">
         <ul>
-          {NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}

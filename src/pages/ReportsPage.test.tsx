@@ -2,14 +2,21 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ReportsPage } from './ReportsPage'
-import { getInventoryReport, getMovementsReport, type MovementReportRow } from '../services/reports'
+import {
+  exportInventoryCsv,
+  exportMovementsCsv,
+  getInventoryReport,
+  getMovementsReport,
+  type MovementReportRow,
+} from '../services/reports'
+import { ApiError } from '../services/api'
 import type { InventoryItem, Paginated } from '../services/types'
 
 vi.mock('../services/reports', () => ({
   getInventoryReport: vi.fn(),
   getMovementsReport: vi.fn(),
-  inventoryCsvUrl: vi.fn(() => '/reports/inventory/export.csv'),
-  movementsCsvUrl: vi.fn(() => '/reports/movements/export.csv'),
+  exportInventoryCsv: vi.fn(),
+  exportMovementsCsv: vi.fn(),
 }))
 
 beforeEach(() => vi.clearAllMocks())
@@ -78,5 +85,50 @@ describe('ReportsPage', () => {
     expect(getMovementsReport).toHaveBeenCalledWith(
       expect.objectContaining({ movement_type: undefined }),
     )
+  })
+
+  it('exports the inventory CSV through the authenticated helper', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getInventoryReport).mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] })
+    vi.mocked(exportInventoryCsv).mockResolvedValue(undefined)
+
+    render(<ReportsPage />)
+    await screen.findAllByRole('button', { name: /export csv/i })
+
+    await user.selectOptions(screen.getByLabelText(/filter by material type/i), 'RAW')
+    await user.click(screen.getAllByRole('button', { name: /export csv/i })[0])
+
+    expect(exportInventoryCsv).toHaveBeenCalledWith('RAW')
+  })
+
+  it('reports a failed export instead of leaving a broken download', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getInventoryReport).mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] })
+    vi.mocked(exportInventoryCsv).mockRejectedValue(
+      new ApiError(401, {
+        error: { code: 'AUTH_REQUIRED', message: 'Authentication required.' },
+      }),
+    )
+
+    render(<ReportsPage />)
+    await screen.findAllByRole('button', { name: /export csv/i })
+
+    await user.click(screen.getAllByRole('button', { name: /export csv/i })[0])
+
+    expect(await screen.findByText(/CSV export failed/i)).toBeInTheDocument()
+    expect(screen.getByText(/Authentication required/i)).toBeInTheDocument()
+  })
+
+  it('shows progress while the movement export is running', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getInventoryReport).mockResolvedValue({ page: 1, perPage: 50, total: 0, items: [] })
+    vi.mocked(exportMovementsCsv).mockReturnValue(new Promise<void>(() => {}))
+
+    render(<ReportsPage />)
+    await screen.findAllByRole('button', { name: /apply filters/i })
+
+    await user.click(screen.getAllByRole('button', { name: /export csv/i })[1])
+
+    expect(screen.getByRole('button', { name: /exporting…/i })).toBeDisabled()
   })
 })
