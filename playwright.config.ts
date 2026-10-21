@@ -16,6 +16,11 @@ import { defineConfig, devices } from '@playwright/test'
 const APP_ORIGIN = process.env.E2E_APP_ORIGIN ?? 'http://localhost:5173'
 const API_ORIGIN = process.env.E2E_API_ORIGIN ?? 'http://127.0.0.1:8000'
 const PHP_BIN = process.env.PHP_BIN ?? 'C:/xampp/php/php.exe'
+// The listeners below derive their ports from the origins above, so a run whose
+// default ports are already occupied (another thread's dev server, CI services)
+// can move the whole suite with E2E_API_ORIGIN / E2E_APP_ORIGIN alone.
+const apiPort = new URL(API_ORIGIN).port || '8000'
+const appPort = new URL(APP_ORIGIN).port || '5173'
 
 export default defineConfig({
   testDir: './e2e',
@@ -41,7 +46,7 @@ export default defineConfig({
       // header): public/index.php goes through symfony/runtime, which resolves
       // APP_ENV from the generated .env.local.php and would silently run against
       // the test or dev database.
-      command: `"${PHP_BIN}" -S 127.0.0.1:8000 e2e-server.php`,
+      command: `"${PHP_BIN}" -S 127.0.0.1:${apiPort} e2e-server.php`,
       cwd: '../coffeestock-backend',
       url: `${API_ORIGIN}/api/health`,
       reuseExistingServer: false,
@@ -53,7 +58,7 @@ export default defineConfig({
       },
     },
     {
-      command: 'npm run dev -- --port 5173 --strictPort',
+      command: `npm run dev -- --port ${appPort} --strictPort`,
       url: APP_ORIGIN,
       reuseExistingServer: false,
       timeout: 180_000,
