@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
-import { USERS } from './support/config'
+import { API_ORIGIN, USERS } from './support/config'
 import { createMaterial, createSupplier, recordReceipt, signIn, unique } from './support/flows'
 
 test.describe('Workflow F — reporting and CSV export', () => {
@@ -64,17 +64,19 @@ test.describe('Workflow F — reporting and CSV export', () => {
     await expect(page.getByRole('table', { name: 'Inventory report' })).toBeVisible()
 
     // Kill the credential server-side, then try to export from the still-open page.
-    await page.evaluate(async () => {
+    // The API origin is passed in as an argument: page.evaluate runs in the browser,
+    // where test-process closure variables do not exist.
+    await page.evaluate(async (logoutUrl) => {
       const raw = window.sessionStorage.getItem('coffeestock.auth.session')
       if (raw === null) {
         return
       }
       const session = JSON.parse(raw) as { token: string }
-      await fetch('http://127.0.0.1:8000/api/logout', {
+      await fetch(logoutUrl, {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.token}` },
       })
-    })
+    }, `${API_ORIGIN}/api/logout`)
 
     // A 401 must never be saved as a file: assert no download fires and the tab
     // is bounced to the login screen instead.
